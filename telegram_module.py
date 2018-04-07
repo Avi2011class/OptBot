@@ -1,14 +1,10 @@
-#!/usr/bin/python3
-
 import enum
 import getpass
 import telegram.ext
 import aes
 import hashlib
 import os
-import sys
 import image_processing
-import json
 
 
 class AsciiBot:
@@ -18,22 +14,34 @@ class AsciiBot:
         response = update.message.text
         bot.send_message(chat_id=update.message.chat_id, text=response)
 
-    def photo_message(self, bot: telegram.bot.Bot, update: telegram.update.Update):
-        file_id = update.message.photo[-1]
-        new_file = bot.get_file(file_id)
+    @staticmethod
+    def start_command(bot: telegram.bot.Bot, update: telegram.update.Update):
+        bot.send_message(chat_id=update.message.chat_id, text='To start, send me a picture')
 
-        hash = '{}:::{}'.format(update.message.chat_id, file_id)
-        hash = str(hashlib.md5(hash.encode()).hexdigest())
+    def photo_message(self, bot: telegram.bot.Bot, update: telegram.update.Update, *args, **kwargs):
+        try:
+            file_id = update.message.photo[-1]
+            new_file = bot.get_file(file_id)
 
-        filename = 'images/downloaded{}.jpg'.format(hash)
+            hash = '{}:::{}'.format(update.message.chat_id, file_id)
+            hash = str(hashlib.md5(hash.encode()).hexdigest())
 
-        bot.send_message(chat_id=update.message.chat_id, text=filename)
+            filename = 'images/downloaded_{}.jpg'.format(hash)
 
-        new_file.download(filename)
-        s = self.converter.Process(filename)
-        s = self.converter.upload_ascii(s)
+            print('file_id:', file_id)
+            print(update.message.from_user.__dict__)
+            print('-' * 50)
 
-        bot.send_message(chat_id=update.message.chat_id, text=s)
+            bot.send_message(chat_id=update.message.chat_id, text='подождите...')
+
+            new_file.download(filename)
+            s = self.converter.Process(filename)
+            s = self.converter.upload_ascii(s)
+
+            bot.send_message(chat_id=update.message.chat_id, text=s)
+        finally:
+            if os.path.exists(filename):
+                os.remove(filename)
 
     @staticmethod
     class AuthMode(enum.IntEnum):
@@ -81,12 +89,17 @@ class AsciiBot:
         default_width = int(input("Default width: ")) \
             if 'default_width' not in kwargs else kwargs['default_width']
 
+        # The main picture converter
         self.converter = image_processing.AsciiImageProcessing(font_size, default_size=(default_width, default_width))
+
+        # Handlers registration
+        start_command_handler = telegram.ext.CommandHandler('start', self.start_command)
+        self.dispatcher.add_handler(start_command_handler)
 
         text_message_handler = telegram.ext.MessageHandler(telegram.ext.Filters.text, self.text_message_echo)
         self.dispatcher.add_handler(text_message_handler)
 
-        photo_handler = telegram.ext.MessageHandler(telegram.ext.Filters.photo, self.photo_message)
+        photo_handler = telegram.ext.MessageHandler(telegram.ext.Filters.photo, self.photo_message, pass_chat_data=True, pass_user_data=True)
         self.dispatcher.add_handler(photo_handler)
 
     def start(self):

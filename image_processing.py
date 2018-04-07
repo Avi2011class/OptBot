@@ -48,7 +48,7 @@ class AsciiImageProcessing:
     
     def load_image(self, image_file):
         image = Image.open(image_file)
-
+        
         width = image.size[0]
         height = image.size[1]
         
@@ -62,35 +62,39 @@ class AsciiImageProcessing:
     @staticmethod
     def transform_image(im: Image):
         image = im
-
-        width = image.size[0]
-        height = image.size[1]
-
-        image = image.filter(ImageFilter.SHARPEN)
-
-        image2 = image.filter(ImageFilter.CONTOUR)
-        image2 = image2.filter(ImageFilter.MinFilter(3)).convert('L').filter(ImageFilter.MedianFilter(3))
-        image = image.convert('L')
-
-        image2.save('images/tmp.png')
-        image = np.array(image)
-        image2 = np.array(image2)
-
-        image_transformed = np.zeros((height, width))
-        image2_transformed = np.zeros((height, width))
-
-        for i in range(height):
-            for j in range(width):
-                image_transformed[i, j] = (image[i, j] / 256 - 1 / 3) / 2 + 1 / 3
-                image2_transformed[i, j] = image2[i, j] / 256
-
-        image_transformed = 1 - (1 - image_transformed) / 3 + image2_transformed * 2
-        image_transformed = image_transformed - np.min(image_transformed)
-        image_transformed /= np.max(image_transformed)
-
-        image_transformed = (image_transformed - 0.2) / 1.3 + 0.1
+        try:
+    
+            width = image.size[0]
+            height = image.size[1]
+    
+            image = image.filter(ImageFilter.SHARPEN)
+    
+            image2 = image.filter(ImageFilter.CONTOUR)
+            image2 = image2.filter(ImageFilter.MinFilter(3)).convert('L').filter(ImageFilter.MedianFilter(3))
+            image = image.convert('L')
+    
+            image2.save('images/tmp.png')
+            image = np.array(image)
+            image2 = np.array(image2)
+    
+            image_transformed = np.zeros((height, width))
+            image2_transformed = np.zeros((height, width))
+    
+            for i in range(height):
+                for j in range(width):
+                    image_transformed[i, j] = (image[i, j] / 256 - 1 / 3) / 2 + 1 / 3
+                    image2_transformed[i, j] = image2[i, j] / 256
+    
+            image_transformed = 1 - (1 - image_transformed) / 3 + image2_transformed * 2
+            image_transformed = image_transformed - np.min(image_transformed)
+            image_transformed /= np.max(image_transformed)
+    
+            image_transformed = (image_transformed - 0.2) / 1.3 + 0.1
+    
+            return image_transformed
         
-        return image_transformed
+        except Exception as e:
+            print(e)
     
     def resize_image(self, image: np.ndarray):
         
