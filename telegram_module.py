@@ -1,3 +1,4 @@
+#!/usr/bin/python3
 import enum
 import getpass
 import telegram.ext
@@ -111,5 +112,6 @@ class AsciiBot:
         self.updater.stop()
 
 
+# a = AsciiBot(AsciiBot.AuthMode.TOKEN_FILE)
 a = AsciiBot(AsciiBot.AuthMode.TOKEN_FILE)
 a.start()
